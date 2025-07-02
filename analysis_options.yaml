@@ -1,0 +1,8 @@
+analyzer:
+  enable-experiment:
+    - macros
+linter:
+  rules:
+    - always_declare_return_types
+    - prefer_const_constructors
+    - avoid_unused_constructor_parameters
