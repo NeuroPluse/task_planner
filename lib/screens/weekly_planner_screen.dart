@@ -10,7 +10,6 @@ import 'package:weekly_task_planner/widgets/task_tile.dart';
 import 'package:weekly_task_planner/widgets/week_stats_dialog.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
-import 'dart:ui';
 
 class WeeklyPlannerScreen extends StatefulWidget {
   const WeeklyPlannerScreen({Key? key}) : super(key: key);
@@ -24,8 +23,6 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
   DateTime selectedWeek = DateTime.now();
   late AnimationController _progressAnimationController;
   late Animation<double> _progressAnimation;
-  late AnimationController _fabAnimationController;
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -37,17 +34,12 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
     _progressAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _progressAnimationController, curve: Curves.easeInOut),
     );
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    )..repeat(reverse: true);
     _progressAnimationController.forward();
   }
 
   @override
   void dispose() {
     _progressAnimationController.dispose();
-    _fabAnimationController.dispose();
     super.dispose();
   }
 
@@ -69,8 +61,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
   }
 
   double _getWeekProgress(List<Task> tasks) {
+    final weekDays = _getWeekDays();
     final weekTasks = tasks.where((task) {
-      final weekDays = _getWeekDays();
       return weekDays.any((day) =>
           task.date.year == day.year &&
           task.date.month == day.month &&
@@ -110,10 +102,6 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
             date: date,
             onTaskAdded: (task) {
               context.read<TaskProvider>().addTask(task);
-              _listKey.currentState?.insertItem(
-                context.read<TaskProvider>().tasks.length - 1,
-                duration: const Duration(milliseconds: 300),
-              );
             },
           ),
         ),
@@ -148,22 +136,6 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
   void _deleteTask(Task task, int index) {
     final localizations = AppLocalizations.of(context);
     context.read<TaskProvider>().deleteTask(task);
-    _listKey.currentState?.removeItem(
-      index,
-      (context, animation) => SlideTransition(
-        position: animation.drive(
-          Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero),
-        ),
-        child: TaskTile(
-          task: task,
-          onToggle: () {},
-          onEdit: () {},
-          onDelete: () {},
-          priorityColor: _getPriorityColor(task.priority),
-        ),
-      ),
-      duration: const Duration(milliseconds: 300),
-    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(localizations.taskDeleted),
@@ -171,7 +143,6 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
           label: localizations.undo,
           onPressed: () {
             context.read<TaskProvider>().addTask(task);
-            _listKey.currentState?.insertItem(index);
           },
         ),
       ),
@@ -190,6 +161,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
     final weekDays = _getWeekDays();
     final progress = _getWeekProgress(tasks);
     final localizations = AppLocalizations.of(context);
+    final taskProvider = context.watch<TaskProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -245,165 +217,173 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
           ),
         ],
       ),
-      floatingActionButton: ScaleTransition(
-        scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _fabAnimationController,
-            curve: Curves.easeInOut,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.grey[100]!.withOpacity(0.5),
+              Colors.white,
+            ],
+            stops: const [0.0, 1.0],
           ),
         ),
-        child: FloatingActionButton(
-          onPressed: () => _addTask(DateTime.now()),
-          child: const Icon(Icons.add),
-          elevation: 8,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      ),
-      body: Column(
-        children: [
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: () {
-                          setState(() {
-                            selectedWeek = selectedWeek.subtract(const Duration(days: 7));
-                          });
-                          _progressAnimationController.reset();
-                          _progressAnimationController.forward();
-                        },
-                      ),
-                      Text(
-                        '${weekDays.first.day}.${weekDays.first.month} - ${weekDays.last.day}.${weekDays.last.month}.${weekDays.last.year}',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: () {
-                          setState(() {
-                            selectedWeek = selectedWeek.add(const Duration(days: 7));
-                          });
-                          _progressAnimationController.reset();
-                          _progressAnimationController.forward();
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(localizations.progress),
-                      Text('${(progress * 100).round()}%'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      return ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
-                        ).createShader(bounds),
-                        child: LinearProgressIndicator(
-                          value: progress * _progressAnimation.value,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          minHeight: 6,
+        child: Column(
+          children: [
+            Card(
+              margin: const EdgeInsets.all(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () {
+                            setState(() {
+                              selectedWeek = selectedWeek.subtract(const Duration(days: 7));
+                            });
+                            _progressAnimationController.reset();
+                            _progressAnimationController.forward();
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ],
+                        Text(
+                          '${weekDays.first.day}.${weekDays.first.month} - ${weekDays.last.day}.${weekDays.last.month}.${weekDays.last.year}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () {
+                            setState(() {
+                              selectedWeek = selectedWeek.add(const Duration(days: 7));
+                            });
+                            _progressAnimationController.reset();
+                            _progressAnimationController.forward();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(localizations.progress),
+                        Text('${(progress * 100).round()}%'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return ShaderMask(
+                          shaderCallback: (bounds) => LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
+                          ).createShader(bounds),
+                          child: LinearProgressIndicator(
+                            value: progress * _progressAnimation.value,
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            minHeight: 6,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: taskProvider.selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: 'Категория',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                      ),
+                      items: taskProvider.categories.map((category) {
+                        return DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        taskProvider.setCategoryFilter(value!);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: AnimatedList(
-              key: _listKey,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              initialItemCount: weekDays.length,
-              itemBuilder: (context, index, animation) {
-                final day = weekDays[index];
-                final dayTasks = _getTasksForDate(day, tasks);
-                final isToday = DateTime.now().day == day.day &&
-                    DateTime.now().month == day.month &&
-                    DateTime.now().year == day.year;
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: weekDays.length,
+                itemBuilder: (context, index) {
+                  final day = weekDays[index];
+                  final dayTasks = _getTasksForDate(day, tasks);
+                  final isToday = DateTime.now().day == day.day &&
+                      DateTime.now().month == day.month &&
+                      DateTime.now().year == day.year;
 
-                return ScaleTransition(
-                  scale: animation.drive(
-                    Tween<double>(begin: 0.8, end: 1.0)
-                        .chain(CurveTween(curve: Curves.easeOut)),
-                  ),
-                  child: FadeTransition(
-                    opacity: animation.drive(Tween<double>(begin: 0, end: 1.0)),
-                    child: Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ExpansionTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isToday
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Text(
-                            day.day.toString(),
-                            style: TextStyle(
-                              color: isToday
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          localizations.getDayName(day.weekday),
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ExpansionTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isToday
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Text(
+                          day.day.toString(),
                           style: TextStyle(
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            color: isToday
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        subtitle: Text('${dayTasks.length} ${localizations.tasks}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (dayTasks.isNotEmpty)
-                              CircularProgressIndicator(
-                                value: dayTasks.where((t) => t.isCompleted).length /
-                                    dayTasks.length,
-                                strokeWidth: 3,
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.surfaceContainerHighest,
-                              ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () => _addTask(day),
-                            ),
-                          ],
-                        ),
-                        children: dayTasks.map((task) => TaskTile(
-                              key: ValueKey(task.id),
-                              task: task,
-                              onToggle: () => _toggleTaskCompletion(task),
-                              onEdit: () => _editTask(task),
-                              onDelete: () => _deleteTask(task, index),
-                              priorityColor: _getPriorityColor(task.priority),
-                            )).toList(),
                       ),
+                      title: Text(
+                        localizations.getDayName(day.weekday),
+                        style: TextStyle(
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text('${dayTasks.length} ${localizations.tasks}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (dayTasks.isNotEmpty)
+                            CircularProgressIndicator(
+                              value: dayTasks.where((t) => t.isCompleted).length /
+                                  dayTasks.length,
+                              strokeWidth: 3,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.surfaceContainerHighest,
+                            ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () => _addTask(day),
+                          ),
+                        ],
+                      ),
+                      children: dayTasks.map((task) => TaskTile(
+                            key: ValueKey(task.id),
+                            task: task,
+                            onToggle: () => _toggleTaskCompletion(task),
+                            onEdit: () => _editTask(task),
+                            onDelete: () => _deleteTask(task, index),
+                            priorityColor: _getPriorityColor(task.priority),
+                          )).toList(),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

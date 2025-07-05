@@ -17,6 +17,7 @@ dependencies:
   dynamic_color: ^1.7.0
   google_fonts: ^6.2.1
   home_widget: ^0.6.0
+  shared_preferences: ^2.2.2
   flutter_localizations:
     sdk: flutter
 
