@@ -27,56 +27,88 @@ class WeekStatsDialog extends StatelessWidget {
     final totalTasks = weekTasks.length;
     final highPriorityTasks = weekTasks.where((task) => task.priority == 2).length;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text(localizations.weekStats),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          StatRow(
-            icon: Icons.task_alt,
-            label: localizations.totalTasks,
-            value: totalTasks.toString(),
-          ),
-          StatRow(
-            icon: Icons.check_circle,
-            label: localizations.completed,
-            value: completedTasks.toString(),
-            color: Colors.green,
-          ),
-          StatRow(
-            icon: Icons.pending,
-            label: localizations.pending,
-            value: (totalTasks - completedTasks).toString(),
-            color: Colors.orange,
-          ),
-          StatRow(
-            icon: Icons.priority_high,
-            label: localizations.highPriority,
-            value: highPriorityTasks.toString(),
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: totalTasks > 0 ? completedTasks / totalTasks : 0,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            totalTasks > 0
-                ? 'Прогресс: ${((completedTasks / totalTasks) * 100).round()}%'
-                : localizations.noTasks,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(localizations.close),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              localizations.weekStats,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            StatRow(
+              icon: Icons.task_alt_rounded,
+              label: localizations.totalTasks,
+              value: totalTasks.toString(),
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            StatRow(
+              icon: Icons.check_circle_rounded,
+              label: localizations.completed,
+              value: completedTasks.toString(),
+              color: Colors.greenAccent,
+            ),
+            StatRow(
+              icon: Icons.pending_rounded,
+              label: localizations.pending,
+              value: (totalTasks - completedTasks).toString(),
+              color: Colors.amber,
+            ),
+            StatRow(
+              icon: Icons.priority_high_rounded,
+              label: localizations.highPriority,
+              value: highPriorityTasks.toString(),
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 24),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: totalTasks > 0 ? completedTasks / totalTasks : 0,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              totalTasks > 0
+                  ? '${localizations.progress}: ${((completedTasks / totalTasks) * 100).round()}%'
+                  : localizations.noTasks,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              ),
+              child: Text(
+                localizations.close,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

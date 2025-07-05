@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:weekly_task_planner/models/task.dart';
 import 'package:weekly_task_planner/l10n/app_localizations.dart';
@@ -26,6 +25,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
   late String _selectedCategory;
   late String? _selectedRecurrence;
   late AnimationController _buttonAnimationController;
+  late Animation<double> _buttonScaleAnimation;
 
   @override
   void initState() {
@@ -36,9 +36,16 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
     _selectedCategory = widget.task?.category ?? 'General';
     _selectedRecurrence = widget.task?.recurrence;
     _buttonAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
-    )..repeat(reverse: true);
+    );
+    _buttonScaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _buttonAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _buttonAnimationController.repeat(reverse: true);
   }
 
   @override
@@ -50,7 +57,17 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
   }
 
   void _saveTask() {
-    if (_titleController.text.trim().isEmpty) return;
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).taskRequired),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
 
     final task = Task(
       id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -70,24 +87,42 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
   Color _getPriorityColor(int priority) {
     switch (priority) {
       case 2:
-        return Colors.red;
+        return Colors.redAccent;
       case 1:
-        return Colors.orange;
+        return Colors.amber;
       case 0:
       default:
-        return Colors.green;
+        return Colors.greenAccent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    return Padding(
+    return Container(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.surface.withOpacity(0.95),
+            Theme.of(context).colorScheme.surfaceContainer.withOpacity(0.95),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -98,6 +133,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
               widget.task == null ? localizations.newTask : localizations.editTask,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w700,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -106,10 +142,13 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
               controller: _titleController,
               decoration: InputDecoration(
                 labelText: localizations.taskName,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                prefixIcon: const Icon(Icons.task_alt),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                prefixIcon: Icon(
+                  Icons.task_alt_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               autofocus: true,
             ),
@@ -118,10 +157,13 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
               controller: _descriptionController,
               decoration: InputDecoration(
                 labelText: localizations.description,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                prefixIcon: const Icon(Icons.description),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                prefixIcon: Icon(
+                  Icons.description_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               maxLines: 3,
             ),
@@ -130,10 +172,10 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
               value: _selectedPriority,
               decoration: InputDecoration(
                 labelText: localizations.priority,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                prefixIcon: const Icon(Icons.flag),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                prefixIcon: Icon(
+                  Icons.flag_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               items: [0, 1, 2].map((priority) {
                 return DropdownMenuItem(
@@ -141,14 +183,21 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
                   child: Row(
                     children: [
                       Container(
-                        width: 12,
-                        height: 12,
+                        width: 14,
+                        height: 14,
                         decoration: BoxDecoration(
                           color: _getPriorityColor(priority),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getPriorityColor(priority).withOpacity(0.4),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       Text(localizations.getPriorityText(priority)),
                     ],
                   ),
@@ -164,16 +213,16 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
             DropdownButtonFormField<String>(
               value: _selectedCategory,
               decoration: InputDecoration(
-                labelText: 'Категория',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                prefixIcon: const Icon(Icons.category),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                labelText: localizations.getCategoryText('Category'),
+                prefixIcon: Icon(
+                  Icons.category_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               items: ['General', 'Work', 'Personal', 'Study'].map((category) {
                 return DropdownMenuItem(
                   value: category,
-                  child: Text(category),
+                  child: Text(localizations.getCategoryText(category)),
                 );
               }).toList(),
               onChanged: (value) {
@@ -186,16 +235,16 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
             DropdownButtonFormField<String?>(
               value: _selectedRecurrence,
               decoration: InputDecoration(
-                labelText: 'Повторение',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                prefixIcon: const Icon(Icons.repeat),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                labelText: localizations.getCategoryText('Recurrence'),
+                prefixIcon: Icon(
+                  Icons.repeat_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               items: [
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: null,
-                  child: Text('Без повторения'),
+                  child: Text(localizations.getCategoryText('No recurrence')),
                 ),
                 const DropdownMenuItem(
                   value: 'daily',
@@ -213,25 +262,33 @@ class _TaskFormSheetState extends State<TaskFormSheet> with TickerProviderStateM
               },
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveTask,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                elevation: 8,
-              ),
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: _buttonAnimationController,
-                    curve: Curves.easeInOut,
+            AnimatedBuilder(
+              animation: _buttonScaleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _buttonScaleAnimation.value,
+                  child: ElevatedButton(
+                    onPressed: _saveTask,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      elevation: 8,
+                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    ),
+                    child: Text(
+                      widget.task == null ? localizations.createTask : localizations.save,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                   ),
-                ),
-                child: Text(widget.task == null ? localizations.createTask : localizations.save),
-              ),
+                );
+              },
             ),
           ],
         ),

@@ -28,11 +28,11 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
   void initState() {
     super.initState();
     _progressAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     _progressAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _progressAnimationController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _progressAnimationController, curve: Curves.easeInOutCubic),
     );
     _progressAnimationController.forward();
   }
@@ -77,12 +77,12 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
   Color _getPriorityColor(int priority) {
     switch (priority) {
       case 2:
-        return Colors.red;
+        return Colors.redAccent;
       case 1:
-        return Colors.orange;
+        return Colors.amber;
       case 0:
       default:
-        return Colors.green;
+        return Colors.greenAccent;
     }
   }
 
@@ -91,18 +91,28 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: TaskFormSheet(
-            date: date,
-            onTaskAdded: (task) {
-              context.read<TaskProvider>().addTask(task);
-            },
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: TaskFormSheet(
+              date: date,
+              onTaskAdded: (task) {
+                context.read<TaskProvider>().addTask(task);
+              },
+            ),
           ),
         ),
       ),
@@ -114,19 +124,29 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: TaskFormSheet(
-            task: task,
-            date: task.date,
-            onTaskAdded: (updatedTask) {
-              context.read<TaskProvider>().updateTask(updatedTask);
-            },
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: TaskFormSheet(
+              task: task,
+              date: task.date,
+              onTaskAdded: (updatedTask) {
+                context.read<TaskProvider>().updateTask(updatedTask);
+              },
+            ),
           ),
         ),
       ),
@@ -145,6 +165,10 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
             context.read<TaskProvider>().addTask(task);
           },
         ),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -164,226 +188,276 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen>
     final taskProvider = context.watch<TaskProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          localizations.appTitle,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics_outlined),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => WeekStatsDialog(
-                  tasks: tasks,
-                  weekDays: weekDays,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 200,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                localizations.appTitle,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
                 ),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.light
-                  ? Icons.dark_mode
-                  : Icons.light_mode,
-            ),
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            ),
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.grey[100]!.withOpacity(0.5),
-              Colors.white,
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: Column(
-          children: [
-            Card(
-              margin: const EdgeInsets.all(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () {
-                            setState(() {
-                              selectedWeek = selectedWeek.subtract(const Duration(days: 7));
-                            });
-                            _progressAnimationController.reset();
-                            _progressAnimationController.forward();
-                          },
-                        ),
-                        Text(
-                          '${weekDays.first.day}.${weekDays.first.month} - ${weekDays.last.day}.${weekDays.last.month}.${weekDays.last.year}',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
-                            setState(() {
-                              selectedWeek = selectedWeek.add(const Duration(days: 7));
-                            });
-                            _progressAnimationController.reset();
-                            _progressAnimationController.forward();
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(localizations.progress),
-                        Text('${(progress * 100).round()}%'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    AnimatedBuilder(
-                      animation: _progressAnimation,
-                      builder: (context, child) {
-                        return ShaderMask(
-                          shaderCallback: (bounds) => LinearGradient(
-                            colors: [
-                              Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.secondary,
-                            ],
-                          ).createShader(bounds),
-                          child: LinearProgressIndicator(
-                            value: progress * _progressAnimation.value,
-                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            minHeight: 6,
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: taskProvider.selectedCategory,
-                      decoration: InputDecoration(
-                        labelText: 'Категория',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainer,
-                      ),
-                      items: taskProvider.categories.map((category) {
-                        return DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        taskProvider.setCategoryFilter(value!);
-                      },
-                    ),
-                  ],
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: weekDays.length,
-                itemBuilder: (context, index) {
-                  final day = weekDays[index];
-                  final dayTasks = _getTasksForDate(day, tasks);
-                  final isToday = DateTime.now().day == day.day &&
-                      DateTime.now().month == day.month &&
-                      DateTime.now().year == day.year;
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.analytics_outlined),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => WeekStatsDialog(
+                      tasks: tasks,
+                      weekDays: weekDays,
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Theme.of(context).brightness == Brightness.light
+                      ? Icons.dark_mode_outlined
+                      : Icons.light_mode_outlined,
+                ),
+                onPressed: () {
+                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                ),
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left_rounded),
+                            onPressed: () {
+                              setState(() {
+                                selectedWeek = selectedWeek.subtract(const Duration(days: 7));
+                              });
+                              _progressAnimationController.reset();
+                              _progressAnimationController.forward();
+                            },
+                          ),
+                          Text(
+                            '${weekDays.first.day}.${weekDays.first.month} - ${weekDays.last.day}.${weekDays.last.month}.${weekDays.last.year}',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right_rounded),
+                            onPressed: () {
+                              setState(() {
+                                selectedWeek = selectedWeek.add(const Duration(days: 7));
+                              });
+                              _progressAnimationController.reset();
+                              _progressAnimationController.forward();
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(localizations.progress, style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                            '${(progress * 100).round()}%',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, child) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: progress * _progressAnimation.value,
+                              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary,
+                              ),
+                              minHeight: 8,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: taskProvider.selectedCategory,
+                        decoration: InputDecoration(
+                          labelText: localizations.getCategoryText('Category'),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        items: taskProvider.categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(localizations.getCategoryText(category)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          taskProvider.setCategoryFilter(value!);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final day = weekDays[index];
+                final dayTasks = _getTasksForDate(day, tasks);
+                final isToday = DateTime.now().day == day.day &&
+                    DateTime.now().month == day.month &&
+                    DateTime.now().year == day.year;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: ExpansionTile(
                       leading: CircleAvatar(
                         backgroundColor: isToday
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            : Theme.of(context).colorScheme.surfaceContainer,
                         child: Text(
                           day.day.toString(),
                           style: TextStyle(
                             color: isToday
-                                ? Theme.of(context).colorScheme.onPrimary
+                                ? Theme.of(context).colorScheme.primary
                                 : Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       title: Text(
                         localizations.getDayName(day.weekday),
                         style: TextStyle(
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                          color: isToday
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      subtitle: Text('${dayTasks.length} ${localizations.tasks}'),
+                      subtitle: Text(
+                        localizations.getTasksCountText(dayTasks.length),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (dayTasks.isNotEmpty)
-                            CircularProgressIndicator(
-                              value: dayTasks.where((t) => t.isCompleted).length /
-                                  dayTasks.length,
-                              strokeWidth: 3,
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.surfaceContainerHighest,
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                value: dayTasks.where((t) => t.isCompleted).length /
+                                    dayTasks.length,
+                                strokeWidth: 3,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
                             ),
                           const SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.add),
+                            icon: const Icon(Icons.add_rounded),
+                            color: Theme.of(context).colorScheme.primary,
                             onPressed: () => _addTask(day),
                           ),
                         ],
                       ),
-                      children: dayTasks.map((task) => TaskTile(
-                            key: ValueKey(task.id),
-                            task: task,
-                            onToggle: () => _toggleTaskCompletion(task),
-                            onEdit: () => _editTask(task),
-                            onDelete: () => _deleteTask(task, index),
-                            priorityColor: _getPriorityColor(task.priority),
-                          )).toList(),
+                      children: dayTasks
+                          .asMap()
+                          .entries
+                          .map((entry) => SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.2, 0),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: AnimationController(
+                                      duration: const Duration(milliseconds: 300),
+                                      vsync: this,
+                                    )..forward(),
+                                    curve: Curves.easeOut,
+                                  ),
+                                ),
+                                child: TaskTile(
+                                  key: ValueKey(entry.value.id),
+                                  task: entry.value,
+                                  onToggle: () => _toggleTaskCompletion(entry.value),
+                                  onEdit: () => _editTask(entry.value),
+                                  onDelete: () => _deleteTask(entry.value, entry.key),
+                                  priorityColor: _getPriorityColor(entry.value.priority),
+                                ),
+                              ))
+                          .toList(),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
+              childCount: weekDays.length,
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addTask(DateTime.now()),
+        child: const Icon(Icons.add_rounded, size: 28),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        elevation: 6,
+        tooltip: localizations.newTask,
       ),
     );
   }

@@ -19,55 +19,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          localizations.appTitle,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
+          localizations.settings,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
             fontSize: 24,
           ),
         ),
         centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surfaceContainer.withOpacity(0.95),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              localizations.notificationSettings,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              value: taskProvider.notificationMinutesBefore,
-              decoration: InputDecoration(
-                labelText: localizations.notifyBefore,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                localizations.notificationSettings,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
-              items: [0, 5, 10, 15, 30, 60].map((minutes) {
-                return DropdownMenuItem(
-                  value: minutes,
-                  child: Text('$minutes минут'),
-                );
-              }).toList(),
-              onChanged: (value) {
-                taskProvider.setNotificationMinutesBefore(value!);
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DropdownButtonFormField<int>(
+                    value: taskProvider.notificationMinutesBefore,
+                    decoration: InputDecoration(
+                      labelText: localizations.notifyBefore,
+                      prefixIcon: Icon(
+                        Icons.notifications_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainer,
+                    ),
+                    items: [0, 5, 10, 15, 30, 60].map((minutes) {
+                      return DropdownMenuItem(
+                        value: minutes,
+                        child: Text(localizations.getNotificationTimeText(minutes)),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      taskProvider.setNotificationMinutesBefore(value!);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
